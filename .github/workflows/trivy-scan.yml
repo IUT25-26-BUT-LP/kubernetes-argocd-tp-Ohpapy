@@ -20,6 +20,15 @@ jobs:
           CLEAN_IMAGE=$(echo $HARBOR_IMAGE | sed 's|10.6.0.190:80/proxy/||')
           echo "image=$CLEAN_IMAGE" >> $GITHUB_OUTPUT
 
+      - name: Scan source code with Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/php
+            p/html
+            p/secrets
+          generateSarif: false
+
       - name: Run Trivy scan
         id: trivy
         continue-on-error: true
