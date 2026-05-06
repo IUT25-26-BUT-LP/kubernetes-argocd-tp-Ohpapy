@@ -1,0 +1,50 @@
+name: Trivy Vulnerability Scan
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Extract image from deployment.yaml
+        id: get-image
+        run: |
+          HARBOR_IMAGE=$(yq '.spec.template.spec.containers[0].image' app/deployment.yaml)
+          CLEAN_IMAGE=$(echo $HARBOR_IMAGE | sed 's|10.6.0.190:80/proxy/||')
+          echo "image=$CLEAN_IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Run Trivy scan
+        id: trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.get-image.outputs.image }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL
+
+      - name: Annotate deployment.yaml
+        run: |
+          SCAN_DATE=$(date -u +"%Y-%m-%d")
+          if [ "${{ steps.trivy.outcome }}" == "failure" ]; then
+            yq -i '.metadata.annotations["security/critical-cve"] = "true"' app/deployment.yaml
+            yq -i '.metadata.annotations["security/last-scan"] = "'$SCAN_DATE'"' app/deployment.yaml
+          else
+            yq -i '.metadata.annotations["security/critical-cve"] = "false"' app/deployment.yaml
+            yq -i '.metadata.annotations["security/last-scan"] = "'$SCAN_DATE'"' app/deployment.yaml
+          fi
+
+      - name: Commit and push annotations
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add app/deployment.yaml
+          git commit -m "chore: update security scan annotations [skip ci]"
+          git push
