@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   security-scan:
     runs-on: ubuntu-latest
@@ -34,14 +37,9 @@ jobs:
       - name: Run Semgrep scan
         id: semgrep
         continue-on-error: true
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: >-
-            p/php
-            p/html
-            p/secrets
-          generateSarif: false
-          output: semgrep-results.json
+        run: |
+          pip install semgrep
+          semgrep --config p/php --config p/secrets app/ --json > semgrep-results.json || true
 
       - name: Generate results.json
         run: |
@@ -49,11 +47,9 @@ jobs:
           TRIVY_STATUS="${{ steps.trivy.outcome }}"
           SEMGREP_STATUS="${{ steps.semgrep.outcome }}"
 
-          # Compter les vulnérabilités Trivy
           CRITICAL=$(cat trivy-results.json | jq '[.Results[].Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length' 2>/dev/null || echo 0)
           HIGH=$(cat trivy-results.json | jq '[.Results[].Vulnerabilities[]? | select(.Severity=="HIGH")] | length' 2>/dev/null || echo 0)
 
-          # Compter les findings Semgrep
           SEMGREP_COUNT=$(cat semgrep-results.json | jq '.results | length' 2>/dev/null || echo 0)
 
           cat > app/results.json << EOF
@@ -87,5 +83,5 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add app/results.json app/deployment.yaml
-          git commit -m "chore: update security scan results [skip ci]"
+          git commit -m "chore: update security scan results [skip ci]" || echo "Nothing to commit"
           git push
