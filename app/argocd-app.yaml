@@ -1,0 +1,20 @@
+# app/argocd-app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-app
+  namespace: argocd
+spec:
+  project: default
+  replicas: 2
+  source:
+    repoURL: 'https://github.com/IUT25-26-BUT-LP/kubernetes-argocd-tp-Ohpapy'
+    targetRevision: HEAD
+    path: app
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
