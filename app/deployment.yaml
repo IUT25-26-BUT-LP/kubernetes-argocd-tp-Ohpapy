@@ -4,7 +4,7 @@ kind: Deployment
 metadata:
   name: nginx
   annotations:
-    security/critical-cve: "false"
+    security/critical-cve: "true"
     security/last-scan: "2026-05-06"
 spec:
   replicas: 1
@@ -17,14 +17,14 @@ spec:
         app: nginx
     spec:
       containers:
-      - name: nginx
-        image: 10.6.0.190:80/proxy/nginx:latest
-        ports:
-        - containerPort: 80
-        volumeMounts:
-        - name: html
-          mountPath: /usr/share/nginx/html  # nginx sert les fichiers depuis ce dossier
+        - name: nginx
+          image: 10.6.0.190:80/proxy/nginx:latest
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html # nginx sert les fichiers depuis ce dossier
       volumes:
-      - name: html
-        configMap:
-          name: nginx-html  # on monte le ConfigMap comme un dossier
+        - name: html
+          configMap:
+            name: nginx-html # on monte le ConfigMap comme un dossier

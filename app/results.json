@@ -1,0 +1,13 @@
+{
+  "scan_date": "2026-05-06T20:45:11Z",
+  "image": "nginx:latest",
+  "trivy": {
+    "status": "failure",
+    "critical": 1,
+    "high": 15
+  },
+  "semgrep": {
+    "status": "success",
+    "findings": 2
+  }
+}
