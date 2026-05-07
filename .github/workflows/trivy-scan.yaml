@@ -30,14 +30,21 @@ jobs:
           exit-code: 0
           severity: CRITICAL,HIGH
 
-      - name: Run Trivy filesystem scan (HTML/CSS/PHP)
-        uses: aquasecurity/trivy-action@master
+      - name: Scan secrets in source code (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Scan bad practices in PHP/HTML/CSS (Semgrep)
+        uses: semgrep/semgrep-action@v1
         with:
-          scan-type: fs
-          scan-ref: app/
-          format: table
-          exit-code: 1
-          severity: CRITICAL,HIGH
+          config: >-
+            p/php
+            p/secrets
+            p/owasp-top-ten
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
       - name: Generate ConfigMap from index.html
         run: |
