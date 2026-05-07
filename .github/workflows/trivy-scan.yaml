@@ -41,32 +41,17 @@ jobs:
           pip install semgrep
           semgrep --config p/php --config p/secrets app/ --json > semgrep-results.json || true
 
-      - name: Generate results.json
+      - name: Check for security issues
         run: |
-          SCAN_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          TRIVY_STATUS="${{ steps.trivy.outcome }}"
-          SEMGREP_STATUS="${{ steps.semgrep.outcome }}"
-
-          CRITICAL=$(cat trivy-results.json | jq '[.Results[].Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length' 2>/dev/null || echo 0)
-          HIGH=$(cat trivy-results.json | jq '[.Results[].Vulnerabilities[]? | select(.Severity=="HIGH")] | length' 2>/dev/null || echo 0)
-
+          if [ "${{ steps.trivy.outcome }}" == "failure" ]; then
+            echo "Trivy found critical/high vulnerabilities"
+            exit 1
+          fi
           SEMGREP_COUNT=$(cat semgrep-results.json | jq '.results | length' 2>/dev/null || echo 0)
-
-          cat > app/results.json << EOF
-          {
-            "scan_date": "$SCAN_DATE",
-            "image": "${{ steps.get-image.outputs.image }}",
-            "trivy": {
-              "status": "$TRIVY_STATUS",
-              "critical": $CRITICAL,
-              "high": $HIGH
-            },
-            "semgrep": {
-              "status": "$SEMGREP_STATUS",
-              "findings": $SEMGREP_COUNT
-            }
-          }
-          EOF
+          if [ "$SEMGREP_COUNT" -gt 0 ]; then
+            echo "Semgrep found $SEMGREP_COUNT issues"
+            exit 1
+          fi
 
       - name: Annotate deployment.yaml
         run: |
@@ -78,10 +63,10 @@ jobs:
           fi
           yq -i '.metadata.annotations["security/last-scan"] = "'$SCAN_DATE'"' app/deployment.yaml
 
-      - name: Commit and push results
+      - name: Commit and push annotations
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add app/results.json app/deployment.yaml
-          git commit -m "chore: update security scan results [skip ci]" || echo "Nothing to commit"
+          git add app/deployment.yaml
+          git commit -m "chore: update security annotations [skip ci]" || echo "Nothing to commit"
           git push
