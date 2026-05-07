@@ -5,7 +5,7 @@ metadata:
   name: nginx
   annotations:
     security/critical-cve: "true"
-    security/last-scan: "2026-05-06"
+    security/last-scan: "2026-05-07"
 spec:
   replicas: 1
   selector:
