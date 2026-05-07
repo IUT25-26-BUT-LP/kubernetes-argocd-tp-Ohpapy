@@ -31,10 +31,9 @@ jobs:
           severity: CRITICAL,HIGH
 
       - name: Scan secrets in source code (Gitleaks)
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar -xz gitleaks
+          ./gitleaks detect --source app/ --no-git --exit-code 1
 
       - name: Scan bad practices in PHP/HTML/CSS (Semgrep)
         run: |
