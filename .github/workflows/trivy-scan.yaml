@@ -19,13 +19,10 @@ jobs:
       - name: Extract image from deployment.yaml
         id: get-image
         run: |
-          HARBOR_IMAGE=$(yq '.spec.template.spec.containers[0].image' app/deployment.yaml)
-          CLEAN_IMAGE=$(echo $HARBOR_IMAGE | sed 's|10.6.0.190:80/proxy/||')
-          echo "image=$CLEAN_IMAGE" >> $GITHUB_OUTPUT
+          IMAGE=$(yq '.spec.template.spec.containers[0].image' app/deployment.yaml)
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
 
       - name: Run Trivy image scan
-        id: trivy-image
-        continue-on-error: true
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ steps.get-image.outputs.image }}
@@ -34,8 +31,6 @@ jobs:
           severity: CRITICAL,HIGH
 
       - name: Run Trivy filesystem scan (HTML/CSS/PHP)
-        id: trivy-fs
-        continue-on-error: true
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
@@ -43,17 +38,6 @@ jobs:
           format: table
           exit-code: 1
           severity: CRITICAL,HIGH
-
-      - name: Check for security issues
-        run: |
-          if [ "${{ steps.trivy-image.outcome }}" == "failure" ]; then
-            echo "Trivy image scan found critical/high vulnerabilities"
-            exit 1
-          fi
-          if [ "${{ steps.trivy-fs.outcome }}" == "failure" ]; then
-            echo "Trivy filesystem scan found critical/high vulnerabilities"
-            exit 1
-          fi
 
       - name: Generate ConfigMap from index.html
         run: |
