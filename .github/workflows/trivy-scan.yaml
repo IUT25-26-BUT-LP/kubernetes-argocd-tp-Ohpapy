@@ -37,14 +37,9 @@ jobs:
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
       - name: Scan bad practices in PHP/HTML/CSS (Semgrep)
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: >-
-            p/php
-            p/secrets
-            p/owasp-top-ten
-        env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+        run: |
+          pip install semgrep -q
+          semgrep scan app/ --config p/php --config p/secrets --config p/owasp-top-ten --error
 
       - name: Generate ConfigMap from index.html
         run: |
