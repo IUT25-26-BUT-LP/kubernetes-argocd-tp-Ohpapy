@@ -21,6 +21,17 @@ jobs:
         run: |
           IMAGE=$(yq '.spec.template.spec.containers[0].image' app/deployment.yaml)
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
+      
+      - name: Scan secrets in source code (Gitleaks)
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar -xz gitleaks
+          ./gitleaks detect --source app/ --no-git --exit-code 1
+
+      - name: Scan bad practices in PHP/HTML/CSS (Semgrep)
+        run: |
+          sudo apt-get install -y python3-pip python3-venv -q
+          python3 -m pip install semgrep -q
+          python3 -m semgrep scan app/ --config p/php --config p/secrets --config p/owasp-top-ten --error
 
       - name: Run Trivy image scan
         uses: aquasecurity/trivy-action@master
@@ -29,16 +40,6 @@ jobs:
           format: table
           exit-code: 0
           severity: CRITICAL,HIGH
-
-      - name: Scan secrets in source code (Gitleaks)
-        run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar -xz gitleaks
-          ./gitleaks detect --source app/ --no-git --exit-code 1
-
-      - name: Scan bad practices in PHP/HTML/CSS (Semgrep)
-        run: |
-          pip install semgrep -q
-          semgrep scan app/ --config p/php --config p/secrets --config p/owasp-top-ten --error
 
       - name: Generate ConfigMap from index.html
         run: |
