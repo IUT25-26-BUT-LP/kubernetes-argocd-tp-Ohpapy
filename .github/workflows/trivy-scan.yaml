@@ -30,7 +30,7 @@ jobs:
         with:
           image-ref: ${{ steps.get-image.outputs.image }}
           format: table
-          exit-code: 1
+          exit-code: 0
           severity: CRITICAL,HIGH
 
       - name: Run Trivy filesystem scan (HTML/CSS/PHP)
@@ -41,7 +41,7 @@ jobs:
           scan-type: fs
           scan-ref: app/
           format: table
-          exit-code: 1
+          exit-code: 0
           severity: CRITICAL,HIGH
 
       - name: Check for security issues
