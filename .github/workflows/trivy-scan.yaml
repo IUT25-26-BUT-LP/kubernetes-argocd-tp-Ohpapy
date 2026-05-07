@@ -29,9 +29,10 @@ jobs:
 
       - name: Scan bad practices in PHP/HTML/CSS (Semgrep)
         run: |
-          sudo apt-get install -y python3-pip python3-venv -q
-          python3 -m pip install semgrep -q
-          python3 -m semgrep scan app/ --config p/php --config p/secrets --config p/owasp-top-ten --error
+          sudo apt-get install -y python3-venv -q
+          python3 -m venv /tmp/semgrep-venv
+          /tmp/semgrep-venv/bin/pip install semgrep -q
+          /tmp/semgrep-venv/bin/semgrep scan app/ --config p/php --config p/secrets --config p/owasp-top-ten --error
 
       - name: Run Trivy image scan
         uses: aquasecurity/trivy-action@master
